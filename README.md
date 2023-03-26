@@ -1,4 +1,5 @@
-# SpringBoot 
+# SpringBoot
+- https://spring.io/guides#tutorials
 
 1 . Building a REST Web Service
 
@@ -88,6 +89,69 @@ public class GreetingControllerTest {
         Greeting actualGreeting = new ObjectMapper().readValue(content, Greeting.class);
 
         Assert.assertEquals(expectedGreeting, actualGreeting);
+    }
+}
+~~~
+
+2 . Scheduling Tasks
+- Adding awaitility dependency
+~~~text
+testImplementation 'org.awaitility:awaitility:3.1.2'
+~~~
+
+~~~java
+package com.example.schedulingtasks;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ScheduledTasks {
+    private static final Logger log = LoggerFactory.getLogger(ScheduledTasks.class);
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+
+    @Scheduled(fixedRate = 5000)
+    public void reportCurrentTime() {
+        log.info("The time is now {}", dateFormat.format(new Date()));
+    }
+}
+~~~
+
+- The @EnableScheduling annotation ensures that a background task executor is created. Without it, nothing gets scheduled.
+~~~java
+package com.example.schedulingtasks;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class SchedulingTasksApplication {
+	public static void main(String[] args) {
+		SpringApplication.run(SchedulingTasksApplication.class, args);
+	}
+}
+~~~
+
+- Add Test class
+~~~java
+package com.example.schedulingtasks;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+public class ScheduledTasksTest {
+
+    @Test
+    public void reportCurrentTime() {
+        ScheduledTasks scheduledtasks = Mockito.mock(ScheduledTasks.class);
+        scheduledtasks.reportCurrentTime();
+        Mockito.verify(scheduledtasks, Mockito.atLeast(1)).reportCurrentTime();
     }
 }
 ~~~

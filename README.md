@@ -168,3 +168,73 @@ public class ScheduledTasksTest {
     }
 }
 ~~~
+
+3 . Consuming a REST Web Service
+- RestTemplate makes interacting with most RESTful services a one-line incantation. And it can even bind that data to custom domain types.
+- Simple Java record class is annotated with @JsonIgnoreProperties from the Jackson JSON processing library to indicate that any properties not bound in this type should be ignored.
+- To directly bind your data to your custom types, you need to specify the variable name to be exactly the same as the key in the JSON document returned from the API. In case your variable name and key in JSON doc do not match, you can use @JsonProperty annotation to specify the exact key of the JSON document.
+
+~~~java
+package com.example.consumingrest;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class ConsumingRestApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ConsumingRestApplication.class, args);
+    }
+}
+~~~
+
+~~~java
+package com.example.consumingrest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Random;
+@Service
+public class QuoteService {
+
+    private final RestTemplate restTemplate;
+    private static final Logger log = LoggerFactory.getLogger(QuoteService.class);
+
+    @Autowired
+    public QuoteService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @Scheduled(fixedRate = 5000)
+    public void callRestEndpoint() {
+        int random = new Random().nextInt(0,100);
+
+        User user = restTemplate.getForObject(
+                "https://jsonplaceholder.typicode.com/posts/" + random, User.class);
+        log.info(user.toString());
+    }
+}
+~~~
+
+~~~java
+package com.example.consumingrest;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+public class Config {
+    @Bean
+    public RestTemplate restTemplate(){
+        return new RestTemplate();
+    }
+}
+~~~

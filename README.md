@@ -5,7 +5,7 @@
 
 - Add 'Spring Web' dependency
 - Creating Greeting record
-~~~java
+~~~text
 package com.example.restservice;
 public record Greeting(long id, String content) { }
 ~~~
@@ -236,5 +236,108 @@ public class Config {
     public RestTemplate restTemplate(){
         return new RestTemplate();
     }
+}
+~~~
+
+4 . Building Java Projects with Gradle
+
+- gradle tasks
+~~~text
+Build tasks
+-----------
+assemble - Assembles the outputs of this project.
+build - Assembles and tests this project.
+buildDependents - Assembles and tests this project and all projects that depend on it.
+buildNeeded - Assembles and tests this project and all projects it depends on.
+classes - Assembles main classes.
+clean - Deletes the build directory.
+jar - Assembles a jar archive containing the main classes.
+testClasses - Assembles test classes.
+
+Build Setup tasks
+-----------------
+init - Initializes a new Gradle build.
+wrapper - Generates Gradle wrapper files.
+
+Documentation tasks
+-------------------
+javadoc - Generates Javadoc API documentation for the main source code.
+
+Help tasks
+----------
+buildEnvironment - Displays all buildscript dependencies declared in root project 'Building Java Projects with Gradle'.
+dependencies - Displays all dependencies declared in root project 'Building Java Projects with Gradle'.
+dependencyInsight - Displays the insight into a specific dependency in root project 'Building Java Projects with Gradle'.
+help - Displays a help message.
+javaToolchains - Displays the detected java toolchains.
+outgoingVariants - Displays the outgoing variants of root project 'Building Java Projects with Gradle'.
+projects - Displays the sub-projects of root project 'Building Java Projects with Gradle'.
+properties - Displays the properties of root project 'Building Java Projects with Gradle'.
+tasks - Displays the tasks runnable from root project 'Building Java Projects with Gradle'.
+
+Verification tasks
+------------------
+check - Runs all checks.
+test - Runs the unit tests.
+~~~
+
+- classes: The project’s compiled .class files
+- reports: Reports produced by the build (such as test reports)
+- libs: Assembled project libraries (usually JAR and/or WAR files)
+
+- You need to add a source for 3rd party libraries.
+- The repositories block indicates that the build should resolve its dependencies from the Maven Central repository.
+~~~text
+repositories { 
+    mavenCentral() 
+}
+~~~
+
+~~~text
+jar {
+    archiveBaseName = 'gs-gradle'
+    archiveVersion =  '0.1.0'
+}
+~~~
+- The Gradle Wrapper is the preferred way of starting a Gradle build
+- These scripts allow you to run a Gradle build without requiring that Gradle be installed on your system
+ 
+~~~text
+gradle wrapper --gradle-version 6.0.1
+~~~
+- The Gradle Wrapper is now available for building your project. Add it to your version control system, and everyone that clones your project can build it just the same. It can be used in the exact same way as an installed version of Gradle
+~~~text
+gradlew build
+~~~
+
+- To make this code runnable, we can use gradle’s application plugin. Add this to your build.gradle file.
+~~~text
+apply plugin: 'application'
+mainClassName = 'hello.HelloWorld'
+~~~
+- Type 'gradlew run'
+- Final build.gradle file
+~~~gradle
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+mainClassName = 'hello.HelloWorld'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    archiveBaseName = 'gs-gradle'
+    archiveVersion =  '0.1.0'
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    implementation "joda-time:joda-time:2.2"
+    testImplementation "junit:junit:4.12"
 }
 ~~~

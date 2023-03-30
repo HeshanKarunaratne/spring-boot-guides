@@ -484,4 +484,91 @@ java -jar target/gs-maven-0.1.0.jar
 </project>
 ~~~
 
-6 . 
+6 . Accessing Relational Data using JDBC with Spring
+
+- Add 'JDBC API' and 'H2 Database' dependencies
+~~~gradle
+plugins {
+	id 'org.springframework.boot' version '3.0.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	runtimeOnly 'com.h2database:h2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
+~~~
+
+- Spring Boot supports H2 (an in-memory relational database engine) and automatically creates a connection. Because we use spring-jdbc, Spring Boot automatically creates a JdbcTemplate. The @Autowired JdbcTemplate field automatically loads it and makes it available.
+- For single insert statements, the insert method of JdbcTemplate is good. However, for multiple inserts, it is better to use batchUpdate
+- Use ? for arguments to avoid SQL injection attacks by instructing JDBC to bind variables.
+
+~~~java
+package com.example.relationaldataaccess;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@SpringBootApplication
+public class RelationalDataAccessApplication implements CommandLineRunner {
+
+	private static final Logger log = LoggerFactory.getLogger(RelationalDataAccessApplication.class);
+
+	public static void main(String args[]) {
+		SpringApplication.run(RelationalDataAccessApplication.class, args);
+	}
+
+	@Autowired
+	JdbcTemplate jdbcTemplate;
+
+	@Override
+	public void run(String... strings) throws Exception {
+
+		log.info("Creating tables");
+
+		jdbcTemplate.execute("DROP TABLE customers IF EXISTS");
+		jdbcTemplate.execute("CREATE TABLE customers(" +
+				"id SERIAL, first_name VARCHAR(255), last_name VARCHAR(255))");
+
+		List<Object[]> splitUpNames = Arrays.asList("John Woo", "Jeff Dean", "Josh Bloch", "Josh Long")
+				.stream()
+				.map(name -> name.split(" "))
+				.collect(Collectors.toList());
+
+		splitUpNames.forEach(name -> log.info(String.format("Inserting customer record for %s %s", name[0], name[1])));
+
+		jdbcTemplate.batchUpdate("INSERT INTO customers(first_name, last_name) VALUES (?,?)", splitUpNames);
+
+		log.info("Querying for customer records where first_name = 'Josh':");
+		jdbcTemplate.query(
+				"SELECT id, first_name, last_name FROM customers WHERE first_name = ?", new Object[] { "Josh" },
+				(rs, rowNum) -> new Customer(rs.getLong("id"), rs.getString("first_name"), rs.getString("last_name"))
+		).forEach(customer -> log.info(customer.toString()));
+	}
+}
+~~~
+
+7 . 

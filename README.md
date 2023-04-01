@@ -571,4 +571,194 @@ public class RelationalDataAccessApplication implements CommandLineRunner {
 }
 ~~~
 
-7 . 
+7 . Accessing Relational Data using JDBC with Spring 2
+- Add below dependencies
+~~~text
+plugins {
+	id 'org.springframework.boot' version '3.0.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	runtimeOnly 'com.h2database:h2'
+	runtimeOnly 'org.springframework.boot:spring-boot-devtools'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
+~~~
+
+- Add below properties
+~~~properties
+spring.h2.console.enabled=true
+spring.jpa.properties.hibernate.generate_statistics=true
+logging.level.org.hibernate.stat=debug
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+logging.level.org.hibernate.type=trace
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.data.jpa.repositories.bootstrap-mode=default
+spring.datasource.username=user
+spring.datasource.password=123
+~~~
+
+~~~java
+package com.example.relationaldataaccess;
+
+/**
+ * @author Heshan Karunaratne
+ */
+public class Student {
+    private Long id;
+    private String name;
+    private String passportNumber;
+
+    public Student() {
+        super();
+    }
+
+    public Student(Long id, String name, String passportNumber) {
+        super();
+        this.id = id;
+        this.name = name;
+        this.passportNumber = passportNumber;
+    }
+
+    public Student(String name, String passportNumber) {
+        super();
+        this.name = name;
+        this.passportNumber = passportNumber;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPassportNumber() {
+        return passportNumber;
+    }
+
+    public void setPassportNumber(String passportNumber) {
+        this.passportNumber = passportNumber;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Student [id=%s, name=%s, passportNumber=%s]", id, name, passportNumber);
+    }
+
+}
+~~~
+
+~~~java
+package com.example.relationaldataaccess;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+
+/**
+ * @author Heshan Karunaratne
+ */
+@Repository
+public class StudentJdbcRepository {
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    public Student findById(long id) {
+        return jdbcTemplate.queryForObject("select * from student where id=?", new BeanPropertyRowMapper<>(Student.class), id);
+    }
+
+    static class StudentRowMapper implements RowMapper<Student> {
+        @Override
+        public Student mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Student student = new Student();
+            student.setId(rs.getLong("id"));
+            student.setName(rs.getString("name"));
+            student.setPassportNumber(rs.getString("passport_number"));
+            return student;
+        }
+    }
+
+    public List<Student> findAll() {
+        return jdbcTemplate.query("select * from student", new StudentRowMapper());
+    }
+
+    public void deleteById(long id) {
+        jdbcTemplate.update("delete from student where id=?", id);
+    }
+
+    public int insert(Student student) {
+        return jdbcTemplate.update("insert into student (id, name, passport_number) " + "values(?,  ?, ?)",
+                student.getId(), student.getName(), student.getPassportNumber());
+    }
+
+    public int update(Student student) {
+        return jdbcTemplate.update("update student " + " set name = ?, passport_number = ? " + " where id = ?",
+                student.getName(), student.getPassportNumber(), student.getId());
+    }
+}
+~~~
+
+~~~java
+package com.example.relationaldataaccess;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+
+@SpringBootApplication
+public class RelationalDataAccessApplication implements CommandLineRunner {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    @Autowired
+    StudentJdbcRepository repository;
+    public static void main(String args[]) {
+        SpringApplication.run(RelationalDataAccessApplication.class, args);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+
+        logger.info("Inserting -> {}", repository.insert(new Student(10010L, "John", "A1234657")));
+        logger.info("Update 10001 -> {}", repository.update(new Student(10001L, "Name-Updated", "New-Passport")));
+        repository.deleteById(10002L);
+        logger.info("All users -> {}", repository.findAll());
+    }
+}
+~~~

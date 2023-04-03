@@ -902,4 +902,87 @@ public class UploadingFilesApplication {
 }
 ~~~
 
-9 . 
+9 . Authenticating a User with LDAP
+- @RestController tells Spring MVC to write the text directly into the HTTP response body, because there are no views. Instead, when you visit the page, you get a simple message in the browser
+
+~~~text
+plugins {
+	id 'org.springframework.boot' version '3.0.0'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.ldap:spring-ldap-core")
+	implementation("org.springframework.security:spring-security-ldap")
+	implementation("com.unboundid:unboundid-ldapsdk")
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation("org.springframework.security:spring-security-test")
+}
+
+test {
+	useJUnitPlatform()
+}
+~~~
+
+~~~java
+package com.example.authenticatingldap;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
+
+
+@Configuration
+public class WebSecurityConfig {
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.authorizeRequests()
+				.anyRequest().fullyAuthenticated()
+				.and()
+			.formLogin();
+
+		return http.build();
+	}
+
+	@Autowired
+	public void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth
+			.ldapAuthentication()
+				.userDnPatterns("uid={0},ou=people")
+				.groupSearchBase("ou=groups")
+				.contextSource()
+					.url("ldap://localhost:8389/dc=springframework,dc=org")
+					.and()
+				.passwordCompare()
+					.passwordEncoder(new BCryptPasswordEncoder())
+					.passwordAttribute("userPassword");
+	}
+
+}
+~~~
+
+- Add below properties to application.properties
+~~~properties
+spring.ldap.embedded.ldif=classpath:test-server.ldif
+spring.ldap.embedded.base-dn=dc=springframework,dc=org
+spring.ldap.embedded.port=8389
+~~~

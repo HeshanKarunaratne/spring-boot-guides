@@ -986,3 +986,108 @@ spring.ldap.embedded.ldif=classpath:test-server.ldif
 spring.ldap.embedded.base-dn=dc=springframework,dc=org
 spring.ldap.embedded.port=8389
 ~~~
+
+10 . Messaging with Redis
+- Navigate to 'C:\Program Files\Redis' and type 'redis-cli'
+
+~~~java
+package com.example.messagingredis;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class Receiver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Receiver.class);
+
+    private AtomicInteger counter = new AtomicInteger();
+
+    public void receiveMessage(String message) {
+        LOGGER.info("Received <" + message + ">");
+        counter.incrementAndGet();
+    }
+
+    public int getCount() {
+        return counter.get();
+    }
+}
+~~~
+
+- Spring Data Redis provides all the components you need to send and receive messages with Redis. Specifically, you need to configure:
+  - Connection factory
+  - Message listener container
+  - Redis template
+  
+- This example uses Spring Boot’s default RedisConnectionFactory, an instance of JedisConnectionFactory that is based on the Jedis Redis library. The connection factory is injected into both the message listener container and the Redis template, as the following example
+
+~~~java
+package com.example.messagingredis;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.listener.PatternTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
+
+@SpringBootApplication
+public class MessagingRedisApplication {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(MessagingRedisApplication.class);
+
+	@Bean
+	RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory,
+			MessageListenerAdapter listenerAdapter) {
+
+		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+		container.setConnectionFactory(connectionFactory);
+		container.addMessageListener(listenerAdapter, new PatternTopic("chat"));
+
+		return container;
+	}
+
+	@Bean
+	MessageListenerAdapter listenerAdapter(Receiver receiver) {
+		return new MessageListenerAdapter(receiver, "receiveMessage");
+	}
+
+	@Bean
+	Receiver receiver() {
+		return new Receiver();
+	}
+
+	@Bean
+	StringRedisTemplate template(RedisConnectionFactory connectionFactory) {
+		return new StringRedisTemplate(connectionFactory);
+	}
+
+	public static void main(String[] args) throws InterruptedException {
+
+		ApplicationContext ctx = SpringApplication.run(MessagingRedisApplication.class, args);
+
+		StringRedisTemplate template = ctx.getBean(StringRedisTemplate.class);
+		Receiver receiver = ctx.getBean(Receiver.class);
+
+		while (receiver.getCount() == 0) {
+
+			LOGGER.info("Sending message...");
+			template.convertAndSend("chat", "Hello from Redis!");
+			Thread.sleep(500L);
+		}
+
+		System.exit(0);
+	}
+}
+~~~
+
+- The bean defined in the listenerAdapter method is registered as a message listener in the message listener container defined in container and will listen for messages on the chat topic. Because the Receiver class is a POJO, it needs to be wrapped in a message listener adapter that implements the MessageListener interface (which is required by addMessageListener()). The message listener adapter is also configured to call the receiveMessage() method on Receiver when a message arrives.
+- The connection factory and message listener container beans are all you need to listen for messages. To send a message, you also need a Redis template. Here, it is a bean configured as a StringRedisTemplate, an implementation of RedisTemplate that is focused on the common use of Redis, where both keys and values are String instances.
+- The main() method kicks off everything by creating a Spring application context. The application context then starts the message listener container, and the message listener container bean starts listening for messages. The main() method then retrieves the StringRedisTemplate bean from the application context and uses it to send a Hello from Redis! message on the chat topic. Finally, it closes the Spring application context, and the application ends.
+
+11 . 

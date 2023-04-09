@@ -1090,4 +1090,189 @@ public class MessagingRedisApplication {
 - The connection factory and message listener container beans are all you need to listen for messages. To send a message, you also need a Redis template. Here, it is a bean configured as a StringRedisTemplate, an implementation of RedisTemplate that is focused on the common use of Redis, where both keys and values are String instances.
 - The main() method kicks off everything by creating a Spring application context. The application context then starts the message listener container, and the message listener container bean starts listening for messages. The main() method then retrieves the StringRedisTemplate bean from the application context and uses it to send a Hello from Redis! message on the chat topic. Finally, it closes the Spring application context, and the application ends.
 
-11 . 
+11 . Messaging with RabbitMQ
+- RabbitMQ is an AMQP(Advanced Message Queuing Protocol) server
+- Docker command
+    - docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3.11-management
+- Access RabbitMQ Management ui
+    - http://localhost:15672/
+    - username: guest
+    - password: guest
+    
+~~~java
+package com.example.messagingrabbitmq;
+
+import java.util.concurrent.CountDownLatch;
+import org.springframework.stereotype.Component;
+
+@Component
+public class Receiver {
+
+  private CountDownLatch latch = new CountDownLatch(1);
+
+  public void receiveMessage(String message) {
+    System.out.println("Received <" + message + ">");
+    latch.countDown();
+  }
+
+  public CountDownLatch getLatch() {
+    return latch;
+  }
+
+}
+~~~
+- Spring AMQP’s RabbitTemplate provides everything you need to send and receive messages with RabbitMQ
+    - Configure a message listener container
+    - Declare the queue, the exchange, and the binding between them
+    - Configure a component to send some messages to test the listener
+    
+~~~java
+package com.example.messagingrabbitmq;
+
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+
+@SpringBootApplication
+public class MessagingRabbitmqApplication {
+
+  static final String topicExchangeName = "spring-boot-exchange";
+
+  static final String queueName = "spring-boot";
+
+  @Bean
+  Queue queue() {
+    return new Queue(queueName, false);
+  }
+
+  @Bean
+  TopicExchange exchange() {
+    return new TopicExchange(topicExchangeName);
+  }
+
+  @Bean
+  Binding binding(Queue queue, TopicExchange exchange) {
+    return BindingBuilder.bind(queue).to(exchange).with("foo.bar.#");
+  }
+
+  @Bean
+  SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
+      MessageListenerAdapter listenerAdapter) {
+    SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+    container.setConnectionFactory(connectionFactory);
+    container.setQueueNames(queueName);
+    container.setMessageListener(listenerAdapter);
+    return container;
+  }
+
+  @Bean
+  MessageListenerAdapter listenerAdapter(Receiver receiver) {
+    return new MessageListenerAdapter(receiver, "receiveMessage");
+  }
+
+  public static void main(String[] args) throws InterruptedException {
+    SpringApplication.run(MessagingRabbitmqApplication.class, args).close();
+  }
+
+}
+~~~
+
+12 . Resillience4J
+- Will be following below topics
+    - Circuit Breakers
+    - Retry
+    - Rate Limiter: Define how many requests can be served in a period
+
+- Check below topics as well
+    - Time Limiter
+    - Cache
+
+~~~text
+CLOSE: Flow is working correctly without an issue
+OPEN: Failure rate above threshold
+HALF_OPEN: Waiting duration, can go to CLOSED or OPEN states. When it is in the HALF_OPEN still the failure rate is above given threshold goes to OPEN state or else go to CLOSED state
+~~~
+
+- Generate 2 Springboot projects
+    - ProjectA: Web and Resillience4J
+    - ProjectB: Web
+
+- Implementing Circuit Breaker
+    - Add below dependencies to ProjectA
+    ~~~text
+        <dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+    ~~~
+
+    - Add below code to application.yml for actuator configs
+    ~~~yml
+    management:
+        health:
+            circuitbreakers:
+            enabled: true
+        endpoints:
+            web:
+            exposure:
+                include: health
+        endpoint:
+            health:
+            show-details: always
+    ~~~
+
+    - Add below code application.yml for circuit breaker
+    ~~~yml
+    server:
+      port: 8080
+    
+    management:
+      health:
+        circuitbreakers:
+          enabled: true
+      endpoints:
+        web:
+          exposure:
+            include: health
+      endpoint:
+        health:
+          show-details: always
+    
+    resilience4j:
+      circuitbreaker:
+        instances:
+          serviceA:
+            registerHealthIndicator: true
+            eventConsumerBufferSize: 10
+            failureRateThreshold: 50
+            minimumNumberOfCalls: 5
+            automaticTransitionFromOpenToHalfOpenEnabled: true
+            waitDurationInOpenState: 5s
+            permittedNumberOfCallsInHalfOpenState: 3
+            slidingWindowSize: 10
+            slidingWindowType: COUNT_BASED
+      retry:
+        instances:
+          serviceA:
+            registerHealthIndicator: true
+            maxRetryAttempts: 5
+            waitDuration: 10s
+      ratelimiter:
+        instances:
+          serviceA:
+            registerHealthIndicator: true
+            limitForPeriod: 10
+            limitRefreshPeriod: 10s
+            timeoutDuration: 3s
+    ~~~

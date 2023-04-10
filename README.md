@@ -1276,3 +1276,37 @@ HALF_OPEN: Waiting duration, can go to CLOSED or OPEN states. When it is in the 
             limitRefreshPeriod: 10s
             timeoutDuration: 3s
     ~~~
+
+13 . Distributed Transaction
+~~~txt
+Monolith -> SOA(Service Oriented Architecture -> Microservice)
+~~~
+
+- Bad practices with MicroService and Distributed Systems
+    1. Connecting multiple Microservices to a single DB
+    2. Replicating DB instance between Microservices
+    3. This can be solved using 2 Phase Commit or SAGA pattern
+
+- 2 Phase Commit(Prepare and commit)
+    - Advantages
+        1. Strong consistency with timeouts
+        2. 
+    - Disadvantages
+        1. Co-ordinator handles all the microservices and the transaction
+        2. Resources are locked from the prepare state
+        3. Using http requests that slows the entire process
+        4. Latency issues
+        
+- Problems in 2 Phase commit
+    1. What happens if the co-ordinator fails?
+    2. What happens if the microservice fails to reply during the phase 1 co-ordinator doesn't even know the state of the failed microservice
+    3. What if the microservice fails during commit phase?
+    
+    - In all of the above cases the resource is blocked and no others can use that resource
+    - Modified version of 2 phase commit is c  alled 3 phase commit
+
+- 3 Phase Commit
+    1. Can commit phase: Co-ordinator finds how many participants are there
+    2. Pre commit phase: Prepare the data and lock resources
+    3. Do commit phase: Checks for the acknowledgement of all the participants
+    

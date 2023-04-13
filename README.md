@@ -1310,3 +1310,34 @@ Monolith -> SOA(Service Oriented Architecture -> Microservice)
     2. Pre commit phase: Prepare the data and lock resources
     3. Do commit phase: Checks for the acknowledgement of all the participants
     
+- Saga Design Pattern
+    - Is a way to manage data consistency across microservices in distributed transaction scenarios
+    ![Diagram](Saga%20Pattern/resources/saga.PNG "Diagram")
+
+- Start the axon server
+    - java -jar axonserver.jar 
+
+- Steps
+    1. Create OrderService, PaymentService, ShipmentService, UserService and CommonService
+        - Add web, lombok, jpa and H2 dependencies 
+        - Add below dependencies
+        ~~~txt
+            <dependency>
+                <groupId>org.axonframework</groupId>
+                <artifactId>axon-spring-boot-starter</artifactId>
+                <version>4.7.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>31.1-jre</version>
+            </dependency>
+        ~~~
+    2. Add below dependency to all except CommonService
+        ~~~text
+            <dependency>
+                <groupId>com.example</groupId>
+                <artifactId>CommonService</artifactId>
+                <version>0.0.1-SNAPSHOT</version>
+            </dependency>
+        ~~~

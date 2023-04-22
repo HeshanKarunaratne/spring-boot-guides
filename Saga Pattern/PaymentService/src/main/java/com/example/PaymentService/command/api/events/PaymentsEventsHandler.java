@@ -1,5 +1,6 @@
 package com.example.PaymentService.command.api.events;
 
+import com.example.CommonService.events.PaymentCancelledEvent;
 import com.example.CommonService.events.PaymentProcessedEvent;
 import com.example.PaymentService.command.api.data.Payment;
 import com.example.PaymentService.command.api.data.PaymentRepository;
@@ -29,6 +30,13 @@ public class PaymentsEventsHandler {
                 .timestamp(new Date())
                 .build();
 
+        paymentRepository.save(payment);
+    }
+
+    @EventHandler
+    public void on(PaymentCancelledEvent event) {
+        Payment payment = paymentRepository.findById(event.getPaymentId()).get();
+        payment.setPaymentStatus(event.getPaymentStatus());
         paymentRepository.save(payment);
     }
 }

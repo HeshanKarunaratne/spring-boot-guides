@@ -2,7 +2,7 @@ package com.example.OrderService.command.api.controller;
 
 import com.example.OrderService.command.api.command.CreateOrderCommand;
 import com.example.OrderService.command.api.model.OrderRestModel;
-import org.axonframework.commandhandling.CommandHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,8 +16,9 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/orders")
+@Slf4j
 public class OrderCommandController {
-    private final CommandGateway commandGateway;
+    private transient CommandGateway commandGateway;
 
     public OrderCommandController(CommandGateway commandGateway) {
         this.commandGateway = commandGateway;
@@ -34,8 +35,7 @@ public class OrderCommandController {
                 .orderStatus("CREATED")
                 .userId(orderRestModel.getUserId())
                 .build();
-
-        commandGateway.sendAndWait(createOrderCommand);
-        return "Order Created";
+        log.info("Order Created for {}", orderId);
+        return commandGateway.sendAndWait(createOrderCommand);
     }
 }

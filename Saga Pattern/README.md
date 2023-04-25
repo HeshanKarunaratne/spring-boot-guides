@@ -185,3 +185,43 @@ public class OrderManagementSaga {
 ~~~
 
 ![Diagram](resources/saga4.PNG "Diagram")
+
+- For every command need to specify @TargetAggregateIdentifier to identify as a unique value
+
+~~~text
+OrderCommandController(@RestController, @RequestBody OrderRestModel)
+|
+CreateOrderCommand
+|
+|-> OrderAggregate(@CommandHandler/OrderAggregate(CreateOrderCommand createOrderCommand), @EventSourcingHandler/on(OrderCreatedEvent event))
+|-> OrderEventsHandler(@EventHandler/on(OrderCreatedEvent event))
+|-> OrderProcessingSaga(@StartSaga, @SagaEventHandler(associationProperty = "orderId")/handle(OrderCreatedEvent event))
+|
+|->-> cancelOrderCommand(String orderId)
+|->-> OrderAggregate(@CommandHandler/handle(CancelOrderCommand cancelOrderCommand), @EventSourcingHandler/on(OrderCancelledEvent event))
+|->-> OrderEventsHandler(@EventHandler/on(OrderCancelledEvent event))
+|->-> OrderProcessingSaga(@EndSaga, @SagaEventHandler(associationProperty = "orderId")/handle(OrderCancelledEvent event))
+|
+ValidatePaymentCommand
+|
+|-> PaymentAggregate(@CommandHandler/PaymentAggregate(ValidatePaymentCommand validatePaymentCommand), @EventSourcingHandler/on(PaymentProcessedEvent event))
+|-> PaymentsEventsHandler(@EventHandler/on(PaymentProcessedEvent event))
+|-> OrderProcessingSage(@SagaEventHandler(associationProperty = "orderId")/handle(PaymentProcessedEvent event))
+|
+|->-> cancelPaymentCommand(PaymentProcessedEvent event)
+|->-> PaymentAggregate(@CommandHandler/handle(CancelPaymentCommand cancelPaymentCommand), @EventSourcingHandler/on(PaymentCancelledEvent event))
+|->-> PaymentsEventsHandler(@EventHandler/on(PaymentCancelledEvent event))
+|->-> OrderProcessingSage(@SagaEventHandler(associationProperty = "orderId")/handle(PaymentCancelledEvent event)) -> cancelOrderCommand(event.getOrderId())
+|
+ShipOrderCommand
+|
+|-> ShipmentAggregate(@CommandHandler/ShipmentAggregate(ShipOrderCommand shipOrderCommand), @EventSourcingHandler/on(OrderShippedEvent event))
+|-> ShipmentEventsHandler(@EventHandler/on(OrderShippedEvent event))
+|-> OrderProcessingSage(@SagaEventHandler(associationProperty = "orderId")/handle(OrderShippedEvent event))
+|
+CompleteOrderCommand
+|
+|-> OrderAggregate(@CommandHandler/handle(CompleteOrderCommand completeOrderCommand), @EventSourcingHandler/on(OrderCompletedEvent event))
+|-> OrderEventsHandler(@EventHandler/on(OrderCompletedEvent event))
+|-> OrderProcessingSaga(@EndSaga, @SagaEventHandler(associationProperty = "orderId")/handle(OrderCompletedEvent event))
+~~~

@@ -24,16 +24,12 @@ import java.util.UUID;
 @Slf4j
 public class OrderProcessingSage {
 
+    @Autowired
     private transient CommandGateway commandGateway;
+    @Autowired
     private transient QueryGateway queryGateway;
 
     public OrderProcessingSage() {
-    }
-
-    @Autowired
-    public OrderProcessingSage(CommandGateway commandGateway, QueryGateway queryGateway) {
-        this.commandGateway = commandGateway;
-        this.queryGateway = queryGateway;
     }
 
     @StartSaga
@@ -45,6 +41,7 @@ public class OrderProcessingSage {
         User user = null;
         try {
             user = queryGateway.query(getUserPaymentDetailsQuery, ResponseTypes.instanceOf(User.class)).join();
+            log.info("user -> {}", user);
         } catch (Exception e) {
             log.error(e.getMessage());
             //Start the Compensating transaction
@@ -68,7 +65,12 @@ public class OrderProcessingSage {
     @SagaEventHandler(associationProperty = "orderId")
     private void handle(PaymentProcessedEvent event) {
         log.info("PaymentProcessedEvent in Saga for Order Id: {}", event.getOrderId());
+
         try {
+
+//            if (true)
+//                throw new Exception("Exception occured");
+
             ShipOrderCommand shipOrderCommand = ShipOrderCommand.builder()
                     .orderId(event.getOrderId())
                     .shipmentId(UUID.randomUUID().toString())

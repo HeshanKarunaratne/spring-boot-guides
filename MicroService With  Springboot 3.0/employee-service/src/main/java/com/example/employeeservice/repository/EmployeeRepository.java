@@ -12,7 +12,16 @@ import java.util.List;
 @Repository
 public class EmployeeRepository {
 
-    private List<Employee> employees = new ArrayList<>();
+    private static List<Employee> employees = new ArrayList<>();
+
+    public EmployeeRepository() {
+        Employee e1 = new Employee(1L, 1L, "Heshan", 28, "ATL");
+        Employee e2 = new Employee(2L, 2L, "Dilan", 29, "SE");
+        Employee e3 = new Employee(3L, 2L, "Danu", 29, "SSE");
+        employees.add(e1);
+        employees.add(e2);
+        employees.add(e3);
+    }
 
     public Employee addEmployee(Employee employee) {
         employees.add(employee);

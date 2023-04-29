@@ -12,7 +12,16 @@ import java.util.List;
 @Repository
 public class DepartmentRepository {
 
-    private List<Department> departments = new ArrayList<>();
+    private static List<Department> departments = new ArrayList<>();
+
+    public DepartmentRepository() {
+        Department d1 = new Department(1L, "CS");
+        Department d2 = new Department(2L, "HR");
+        Department d3 = new Department(3L, "Finance");
+        departments.add(d1);
+        departments.add(d2);
+        departments.add(d3);
+    }
 
     public Department addDepartment(Department department) {
         departments.add(department);

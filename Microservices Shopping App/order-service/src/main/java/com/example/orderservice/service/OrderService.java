@@ -3,10 +3,13 @@ package com.example.orderservice.service;
 import com.example.orderservice.dto.InventoryResponse;
 import com.example.orderservice.dto.OrderLineItemsDto;
 import com.example.orderservice.dto.OrderRequest;
+import com.example.orderservice.event.OrderPlacedEvent;
 import com.example.orderservice.model.Order;
 import com.example.orderservice.model.OrderLineItems;
 import com.example.orderservice.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -21,10 +24,12 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate;
 
     public String placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
@@ -40,10 +45,10 @@ public class OrderService {
                 .stream()
                 .map(OrderLineItems::getSkuCode)
                 .toList();
-
+        log.info("Calling Inventory API");
         // Call Inventory service and place order if product is in stock
         InventoryResponse[] inventoryResponseArray = webClientBuilder.build().get()
-                .uri("http://inventory-service/api/inventory",
+                .uri("http://localhost:8083/api/inventory",
                         uriBuilder ->
                                 uriBuilder.queryParam("skuCode", skuCodeList).build())
                 .retrieve()
@@ -53,9 +58,11 @@ public class OrderService {
         boolean allProductsInStock = Arrays.stream(inventoryResponseArray)
                 .allMatch(InventoryResponse::isInStock);
 
-        if (allProductsInStock)
+        if (allProductsInStock) {
             orderRepository.save(order);
-        else
+//            kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
+
+        } else
             throw new IllegalArgumentException("Product is not in stock, please try again later");
 
         return "Order Placed successfully!!";

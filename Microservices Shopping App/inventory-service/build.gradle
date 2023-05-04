@@ -30,6 +30,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth:3.0.6'
+    implementation 'org.springframework.cloud:spring-cloud-sleuth-zipkin:3.0.6'
 }
 
 dependencyManagement {

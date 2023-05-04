@@ -32,6 +32,8 @@ dependencies {
     testImplementation "org.testcontainers:testcontainers:1.16.3"
     testImplementation "org.testcontainers:mongodb:1.16.3"
     testImplementation "org.testcontainers:junit-jupiter:1.16.3"
+    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth:3.0.6'
+    implementation 'org.springframework.cloud:spring-cloud-sleuth-zipkin:3.0.6'
 }
 
 dependencyManagement {

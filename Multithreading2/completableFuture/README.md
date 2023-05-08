@@ -410,3 +410,112 @@ public class _Stream {
     }
 }
 ~~~
+
+- Normal Validation
+~~~java
+package com.example.JavaFunctionals.CombinatorPattern;
+
+import java.time.LocalDate;
+import java.time.Period;
+
+/**
+ * @author Heshan Karunaratne
+ */
+public class CustomerValidatorService {
+    private boolean isEmailValid(String email) {
+        return email.contains("@");
+    }
+
+    private boolean isPhoneNumberValid(String phoneNumber) {
+        return phoneNumber.startsWith("+0");
+    }
+
+    private boolean isAdult(LocalDate dob) {
+        return Period.between(dob, LocalDate.now()).getYears() > 16;
+    }
+
+    public boolean isValid(Customer customer) {
+        return isEmailValid(customer.getEmail()) &&
+                isPhoneNumberValid(customer.getPhoneNumber()) &&
+                isAdult(customer.getDob());
+    }
+}
+~~~
+
+- Better way to validate using combinator pattern
+~~~java
+package com.example.JavaFunctionals.CombinatorPattern;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.util.function.Function;
+
+import static com.example.JavaFunctionals.CombinatorPattern.CustomerRegistrationValidator.ValidationResult;
+import static com.example.JavaFunctionals.CombinatorPattern.CustomerRegistrationValidator.ValidationResult.*;
+
+/**
+ * @author Heshan Karunaratne
+ */
+public interface CustomerRegistrationValidator
+        extends Function<Customer, ValidationResult> {
+
+    enum ValidationResult {
+        SUCCESS,
+        PHONE_NUMBER_NOT_VALID,
+        EMAIL_NOT_VALID,
+        IS_NOT_AN_ADULT
+    }
+    
+    static CustomerRegistrationValidator isEmailValid() {
+        return customer -> customer.getEmail().contains("@") ? SUCCESS : EMAIL_NOT_VALID;
+    }
+
+    static CustomerRegistrationValidator isPhoneNumberValid() {
+        return customer -> customer.getPhoneNumber().startsWith("+0") ? SUCCESS : PHONE_NUMBER_NOT_VALID;
+    }
+
+    static CustomerRegistrationValidator isAnAdult() {
+        return customer -> Period.between(customer.getDob(), LocalDate.now()).getYears() > 16 ? SUCCESS : IS_NOT_AN_ADULT;
+    }
+
+    default CustomerRegistrationValidator and(CustomerRegistrationValidator other) {
+        return customer -> {
+            ValidationResult result = this.apply(customer);
+            return result.equals(SUCCESS) ? other.apply(customer) : result;
+        };
+    }
+}
+~~~
+
+~~~java
+package com.example.JavaFunctionals.CombinatorPattern;
+
+import java.time.LocalDate;
+
+import static com.example.JavaFunctionals.CombinatorPattern.CustomerRegistrationValidator.*;
+
+/**
+ * @author Heshan Karunaratne
+ */
+public class Main {
+    public static void main(String[] args) {
+
+        Customer customer = new Customer(
+                "Heshan",
+                "heshan@gmail.com",
+                "+052451331",
+                LocalDate.of(2015, 1, 1));
+
+//        Using Combinator Pattern
+        ValidationResult result = isEmailValid()
+                .and(isPhoneNumberValid())
+                .and(isAnAdult())
+                .apply(customer);
+
+        System.out.println(result);
+        if (result != ValidationResult.SUCCESS) {
+            throw new IllegalStateException(result.name());
+        }
+    }
+}
+~~~

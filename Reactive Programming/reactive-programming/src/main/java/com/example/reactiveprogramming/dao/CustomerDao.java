@@ -37,4 +37,10 @@ public class CustomerDao {
                 .doOnNext(i -> System.out.println("Processing count: " + i))
                 .map(i -> new Customer(i, "customer" + i));
     }
+
+    public Flux<Customer> getCustomerRouterFunction() {
+        return Flux.range(1, 10)
+                .doOnNext(i -> System.out.println("Processing count: " + i))
+                .map(i -> new Customer(i, "customer" + i));
+    }
 }

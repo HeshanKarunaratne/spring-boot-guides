@@ -3,6 +3,9 @@ package com.example.pagingsortingservice.service;
 import com.example.pagingsortingservice.entity.Product;
 import com.example.pagingsortingservice.repo.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,5 +32,17 @@ public class ProductService {
 
     public List<Product> findAllProducts() {
         return repository.findAll();
+    }
+
+    public List<Product> findProductsWithSorting(String field) {
+        return repository.findAll(Sort.by(Sort.Direction.ASC, field));
+    }
+
+    public Page<Product> findProductsWithPaging(int offset, int pageSize) {
+        return repository.findAll(PageRequest.of(offset, pageSize));
+    }
+
+    public Page<Product> findProductsWithPagingAndSorting(int offset, int pageSize, String field) {
+        return repository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(Sort.Direction.ASC, field)));
     }
 }

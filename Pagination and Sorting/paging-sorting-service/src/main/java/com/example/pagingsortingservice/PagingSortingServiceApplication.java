@@ -7,10 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -46,6 +43,18 @@ public class PagingSortingServiceApplication {
     @GetMapping("/sort/{field}/paging/{offset}/{pageSize}")
     public APIResponse<Page<Product>> getProductsWithPagingAndSorting(@PathVariable int offset, @PathVariable int pageSize, @PathVariable String field) {
         Page<Product> allProducts = productService.findProductsWithPagingAndSorting(offset, pageSize, field);
+        return new APIResponse<>(allProducts.getSize(), allProducts);
+    }
+
+    @GetMapping("/sort/{field}/direction/{direction}")
+    public APIResponse<Page<Product>> getProductsWithPagingAndSortingV2(@PathVariable String field, @PathVariable String direction, @RequestParam int offset, @RequestParam int pageSize) {
+
+        System.out.println("field: " + field);
+        System.out.println("direction: " + direction);
+        System.out.println("offset: " + offset);
+        System.out.println("pageSize: " + pageSize);
+
+        Page<Product> allProducts = productService.getProductsWithPagingAndSortingV2(field, direction, offset, pageSize);
         return new APIResponse<>(allProducts.getSize(), allProducts);
     }
 }

@@ -45,4 +45,9 @@ public class ProductService {
     public Page<Product> findProductsWithPagingAndSorting(int offset, int pageSize, String field) {
         return repository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(Sort.Direction.ASC, field)));
     }
+
+    public Page<Product> getProductsWithPagingAndSortingV2(String field, String direction, int offset, int pageSize) {
+        Sort.Direction dir = direction.isBlank() ? Sort.Direction.ASC : Sort.Direction.ASC.toString().equals(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return repository.findAll(PageRequest.of(offset, pageSize).withSort(Sort.by(dir, field)));
+    }
 }

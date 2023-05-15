@@ -28,6 +28,15 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<String> updateUser(@RequestBody User user, @PathVariable Long id) {
+        boolean result = userService.updateUser(user, id);
+        if (result)
+            return ResponseEntity.ok("User Updated Successfully");
+        else
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
     @GetMapping
     public ResponseEntity<List<User>> fetchAllUsers() {
         List<User> users = userService.fetchAllUser();

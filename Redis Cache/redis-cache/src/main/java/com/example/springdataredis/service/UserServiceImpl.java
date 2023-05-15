@@ -3,6 +3,8 @@ package com.example.springdataredis.service;
 import com.example.springdataredis.entity.User;
 import com.example.springdataredis.repository.UserDao;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +36,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(key = "#id", value = "USER")
     public boolean deleteUser(Long id) {
         return userDao.deleteUser(id);
+    }
+
+    @Override
+    @CachePut(key = "#id", value = "USER")
+    public boolean updateUser(User user, Long id) {
+        return userDao.updateUser(user, id);
     }
 }

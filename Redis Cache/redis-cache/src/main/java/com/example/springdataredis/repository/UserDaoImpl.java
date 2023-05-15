@@ -53,4 +53,20 @@ public class UserDaoImpl implements UserDao {
             return false;
         }
     }
+
+    @Override
+    public boolean updateUser(User user, Long id) {
+        try {
+            User existing = (User) redisTemplate.opsForHash().get(KEY, user.getId().toString());
+            existing.setAge(user.getAge());
+            existing.setEmailId(user.getEmailId());
+            existing.setFirstName(user.getFirstName());
+            existing.setLastName(user.getLastName());
+            redisTemplate.opsForHash().put(KEY, user.getId().toString(), existing);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

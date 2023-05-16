@@ -9,6 +9,9 @@ import com.example.transactional.repo.PaymentInfoRepository;
 import com.example.transactional.utils.PaymentUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ public class FlightBookingService {
     private final PassengerInfoRepository passengerInfoRepository;
     private final PaymentInfoRepository paymentInfoRepository;
 
+    @Transactional//(readOnly = false, isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRED)
     public FlightBookingAcknowledgement bookFlightTicket(FlightBookingRequest request) {
         PassengerInfo passengerInfo = request.getPassengerInfo();
         passengerInfoRepository.save(passengerInfo);

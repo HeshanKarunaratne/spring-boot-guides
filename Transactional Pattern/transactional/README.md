@@ -1,0 +1,9 @@
+# Propagation Level
+
+- REQUIRED(default)
+- SUPPORTS
+- MANDATORY
+- REQUIRES_NEW
+- NOT_SUPPORTED
+- NEVER
+- NESTED

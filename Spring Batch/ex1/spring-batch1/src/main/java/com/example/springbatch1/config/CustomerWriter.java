@@ -2,7 +2,6 @@ package com.example.springbatch1.config;
 
 import com.example.springbatch1.entity.Customer;
 import com.example.springbatch1.repo.CustomerRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

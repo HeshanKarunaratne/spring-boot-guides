@@ -36,4 +36,6 @@ public class Customer {
     private String country;
     @Column(name = "DOB")
     private String dob;
+    @Column(name = "AGE")
+    private Integer age;
 }

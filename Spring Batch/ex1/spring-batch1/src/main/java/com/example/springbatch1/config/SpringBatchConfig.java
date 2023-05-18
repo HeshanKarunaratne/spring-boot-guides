@@ -1,15 +1,18 @@
 package com.example.springbatch1.config;
 
 import com.example.springbatch1.entity.Customer;
+import com.example.springbatch1.listener.StepSkipListener;
 import com.example.springbatch1.partition.ColumnRangePartitioner;
 import lombok.AllArgsConstructor;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.SkipListener;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.partition.PartitionHandler;
 import org.springframework.batch.core.partition.support.TaskExecutorPartitionHandler;
+import org.springframework.batch.core.step.skip.SkipPolicy;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
@@ -36,7 +39,7 @@ public class SpringBatchConfig {
     @Bean
     public FlatFileItemReader<Customer> reader() {
         FlatFileItemReader<Customer> itemReader = new FlatFileItemReader<>();
-        itemReader.setResource(new FileSystemResource("src/main/resources/customers.csv"));
+        itemReader.setResource(new FileSystemResource("src/main/resources/customers-error.csv"));
         itemReader.setName("csvReader");
         itemReader.setLinesToSkip(1);
         itemReader.setLineMapper(lineMapper());
@@ -49,7 +52,7 @@ public class SpringBatchConfig {
         DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
         lineTokenizer.setDelimiter(",");
         lineTokenizer.setStrict(false);
-        lineTokenizer.setNames("id", "firstName", "lastName", "email", "gender", "contactNo", "country", "dob");
+        lineTokenizer.setNames("id", "firstName", "lastName", "email", "gender", "contactNo", "country", "dob", "age");
 
         BeanWrapperFieldSetMapper<Customer> fieldSetMapper = new BeanWrapperFieldSetMapper<>();
         fieldSetMapper.setTargetType(Customer.class);
@@ -70,6 +73,16 @@ public class SpringBatchConfig {
                 .reader(reader())
                 .processor(processor())
                 .writer(customerWriter)
+                .faultTolerant()
+
+//                defined policy from batch
+                /*
+                .skipLimit(100)
+                .skip(NumberFormatException.class)
+                 */
+
+                .listener(skipListener()) // My listener
+                .skipPolicy(skipPolicy()) // My own policy
                 .build();
     }
 
@@ -110,5 +123,15 @@ public class SpringBatchConfig {
         taskExecutor.setCorePoolSize(4);
         taskExecutor.setQueueCapacity(4);
         return taskExecutor;
+    }
+
+    @Bean
+    public SkipPolicy skipPolicy() {
+        return new ExceptionSkipPolicy();
+    }
+
+    @Bean
+    public SkipListener skipListener() {
+        return new StepSkipListener();
     }
 }

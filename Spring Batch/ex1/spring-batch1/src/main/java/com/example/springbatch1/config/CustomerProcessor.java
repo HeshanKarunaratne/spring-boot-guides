@@ -14,6 +14,10 @@ public class CustomerProcessor implements ItemProcessor<Customer, Customer> {
 //        } else {
 //            return null;
 //        }
-        return customer;
+        if (customer.getAge() > 18) {
+            return customer;
+        } else {
+            return null;
+        }
     }
 }

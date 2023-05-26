@@ -1,12 +1,14 @@
 package com.example.jparelationships.teacher;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.example.jparelationships.subject.Subject;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Heshan Karunaratne
@@ -20,4 +22,8 @@ public class Teacher {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+
+    @JsonIgnore // to stop iterating
+    @OneToMany(mappedBy = "teacher")
+    private Set<Subject> subjects = new HashSet<>();
 }

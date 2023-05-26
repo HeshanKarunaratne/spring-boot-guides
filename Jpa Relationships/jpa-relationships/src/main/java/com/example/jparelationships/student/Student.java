@@ -23,9 +23,9 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @JsonIgnore
-    @ManyToMany(mappedBy = "enrolledStudents")
-    private Set<Subject> subjects = new HashSet<>();
-
     private String name;
+
+    @JsonIgnore // to stop iterating
+    @ManyToMany(mappedBy = "enrolledStudents") // mapped by fieldName in Subject
+    private Set<Subject> subjects = new HashSet<>();
 }

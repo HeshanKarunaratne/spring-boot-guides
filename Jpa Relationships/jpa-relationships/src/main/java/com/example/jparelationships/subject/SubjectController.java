@@ -2,6 +2,8 @@ package com.example.jparelationships.subject;
 
 import com.example.jparelationships.student.Student;
 import com.example.jparelationships.student.StudentRepository;
+import com.example.jparelationships.teacher.Teacher;
+import com.example.jparelationships.teacher.TeacherRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ public class SubjectController {
 
     private final SubjectRepository subjectRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
 
     @GetMapping
     List<Subject> getSubjects() {
@@ -41,6 +44,21 @@ public class SubjectController {
             subject.enrollStudent(student);
             return subjectRepository.save(subject);
         }
-        return null;
+        throw new IllegalArgumentException("Passed Arguments Illegal");
+    }
+
+    @PutMapping("/{subjectId}/teacher/{teacherId}")
+    Subject assignTeacherToSubject(@PathVariable Long subjectId, @PathVariable Long teacherId) {
+        Optional<Subject> subjectOptional = subjectRepository.findById(subjectId);
+        Optional<Teacher> teacherOptional = teacherRepository.findById(teacherId);
+
+        if (subjectOptional.isPresent() && teacherOptional.isPresent()) {
+            Subject subject = subjectOptional.get();
+            Teacher teacher = teacherOptional.get();
+
+            subject.assignTeacher(teacher);
+            return subjectRepository.save(subject);
+        }
+        throw new IllegalArgumentException("Passed Arguments Illegal");
     }
 }

@@ -1,6 +1,7 @@
 package com.example.jparelationships.subject;
 
 import com.example.jparelationships.student.Student;
+import com.example.jparelationships.teacher.Teacher;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,18 +22,25 @@ public class Subject {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String name;
+
     @ManyToMany
     @JoinTable(
             name = "student_enrolled",
-            joinColumns = @JoinColumn(name = "subject_id"),
-            inverseJoinColumns = @JoinColumn(name = "student_id")
+            joinColumns = @JoinColumn(name = "subject_id"), // id of this class(Subject)
+            inverseJoinColumns = @JoinColumn(name = "student_id") // id of mapped class(Subject)
     )
     private Set<Student> enrolledStudents = new HashSet<>();
 
-    private String name;
-
-
     public void enrollStudent(Student student) {
         enrolledStudents.add(student);
+    }
+
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "teacher_id", referencedColumnName = "id") // id of teacher
+    private Teacher teacher;
+
+    public void assignTeacher(Teacher teacher) {
+        this.teacher = teacher;
     }
 }

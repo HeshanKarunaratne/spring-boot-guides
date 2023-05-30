@@ -3,6 +3,7 @@ package com.example.reactiveprogramming.controller;
 import com.example.reactiveprogramming.dto.ProductDto;
 import com.example.reactiveprogramming.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -16,7 +17,7 @@ import reactor.core.publisher.Mono;
 public class ProductController {
     private final ProductService productService;
 
-    @GetMapping
+    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ProductDto> getProducts() {
         return productService.getProducts();
     }

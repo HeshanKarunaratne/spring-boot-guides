@@ -1,21 +1,21 @@
+server:
+  port: 8080
+
 spring:
   cloud:
     gateway:
       routes:
-        - id: swiggy-app
+        - id: swiggy-service
           uri: lb://SWIGGY-APP
           predicates:
             - Path=/swiggy/**
 
-
-
-        - id: restaurant-service
+        - id: restaurent-service
           uri: lb://RESTAURANT-SERVICE
           predicates:
             - Path=/restaurant/**
 
-
-        - id: identity-service
+        - id: auth-service
           uri: lb://IDENTITY-SERVICE
           predicates:
             - Path=/auth/**

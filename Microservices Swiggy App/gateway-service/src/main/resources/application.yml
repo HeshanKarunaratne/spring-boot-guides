@@ -16,7 +16,7 @@ spring:
             - Path=/restaurant/**
 
         - id: auth-service
-          uri: lb://IDENTITY-SERVICE
+          uri: lb://AUTH-SERVICE
           predicates:
             - Path=/auth/**
 

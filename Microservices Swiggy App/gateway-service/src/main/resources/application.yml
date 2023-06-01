@@ -9,11 +9,15 @@ spring:
           uri: lb://SWIGGY-APP
           predicates:
             - Path=/swiggy/**
+          filters:
+            - AuthenticationFilter
 
         - id: restaurent-service
           uri: lb://RESTAURANT-SERVICE
           predicates:
             - Path=/restaurant/**
+          filters:
+            - AuthenticationFilter
 
         - id: auth-service
           uri: lb://AUTH-SERVICE

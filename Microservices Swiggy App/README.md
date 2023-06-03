@@ -373,3 +373,141 @@ public class JWTService {
 
 }
 ~~~
+
+- Adding AuthenticationFilter to Gateway Service
+    - Steps
+        1. Create an AuthenticationFilter that will validate the token before routing to /swiggy and /restuarent endpoints
+        2. Create a route validating the endpoints that needs to be skipped
+        3. Add token validating classes as well
+        
+~~~java
+package com.example.gatewayservice.filter;
+
+import com.example.gatewayservice.util.JWTUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * @author Heshan Karunaratne
+ */
+@Component
+public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
+
+    @Autowired
+    private RouteValidator routeValidator;
+
+    @Autowired
+    private RestTemplate template;
+
+    @Autowired
+    private JWTUtil jwtUtil;
+
+    public AuthenticationFilter() {
+        super(Config.class);
+    }
+
+    @Override
+    public GatewayFilter apply(Config config) {
+        return ((exchange, chain) -> {
+
+            if (routeValidator.isSecured.test(exchange.getRequest())) {
+                //header contains token or not
+                if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+                    throw new RuntimeException("Missing authorization header");
+                }
+
+                String authHeader = exchange.getRequest().getHeaders().get(HttpHeaders.AUTHORIZATION).get(0);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    authHeader = authHeader.substring(7);
+                }
+
+                //REST call to AUTH service
+                try {
+//                    template.getForObject("http://APP-SERVICE/auth/validate?token=" + authHeader, String.class);
+                    jwtUtil.validateToken(authHeader);
+
+                } catch (RestClientException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException("Unauthorized access to application");
+                }
+            }
+            return chain.filter(exchange);
+        });
+    }
+
+    public static class Config {
+
+    }
+}
+~~~
+
+~~~java
+package com.example.gatewayservice.filter;
+
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.function.Predicate;
+
+/**
+ * @author Heshan Karunaratne
+ */
+@Component
+public class RouteValidator {
+
+    public static final List<String> openApiEndpoints = List.of(
+            "/auth/register",
+            "/auth/token",
+            "/eureka"
+    );
+
+    public Predicate<ServerHttpRequest> isSecured =
+            request -> openApiEndpoints.stream()
+                    .noneMatch(uri -> request.getURI().getPath().contains(uri));
+}
+~~~
+
+~~~java
+package com.example.gatewayservice.util;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.stereotype.Service;
+
+import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author Heshan Karunaratne
+ */
+@Service
+public class JWTUtil {
+    public static final String SECRET = "432A462D4A614E645267556B58703273357538782F413F4428472B4B62506553";
+
+    private Key getSignKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    /**
+     * Validate Token
+     *
+     * @param token
+     * @return
+     */
+    public void validateToken(final String token) {
+        Jwts.parserBuilder().setSigningKey(getSignKey()).build().parseClaimsJws(token);
+    }
+
+}
+~~~

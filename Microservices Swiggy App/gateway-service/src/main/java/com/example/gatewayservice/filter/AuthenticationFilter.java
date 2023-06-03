@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -31,7 +32,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     @Override
     public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
-
+            ServerHttpRequest request = null;
             if (routeValidator.isSecured.test(exchange.getRequest())) {
                 //header contains token or not
                 if (!exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
@@ -48,12 +49,17 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 //                    template.getForObject("http://APP-SERVICE/auth/validate?token=" + authHeader, String.class);
                     jwtUtil.validateToken(authHeader);
 
+                    request = exchange.getRequest()
+                            .mutate()
+                            .header("loggedInUser", jwtUtil.extractUsername(authHeader))
+                            .build();
+
                 } catch (RestClientException e) {
                     e.printStackTrace();
                     throw new RuntimeException("Unauthorized access to application");
                 }
             }
-            return chain.filter(exchange);
+            return chain.filter(exchange.mutate().request(request).build());
         });
     }
 

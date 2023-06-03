@@ -4,10 +4,7 @@ import com.example.swiggyservice.dto.OrderResponseDTO;
 import com.example.swiggyservice.service.SwiggyAppService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @author Heshan Karunaratne
@@ -26,8 +23,8 @@ public class SwiggyAppController {
     }
 
     @GetMapping("/{orderId}")
-    public OrderResponseDTO checkOrderStatus(@PathVariable String orderId) {
-        log.info("inside swiggy controller");
+    public OrderResponseDTO checkOrderStatus(@PathVariable String orderId, @RequestHeader("loggedInUser") String username) {
+        log.info("LoggedInUser: {}", username);
         return service.checkOrderStatus(orderId);
     }
 }

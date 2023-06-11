@@ -13,7 +13,7 @@ const typeDefs = gql`
     }
 
     type Query {
-        users: [User!]!
+        users: UsersResult
         user(id: ID!): User!
         movies: [Movie!]!
         movie(name: String!): Movie!
@@ -51,6 +51,38 @@ const typeDefs = gql`
         GERMANY
         CHILE
     }
+
+    type UsersSuccessfulResult {
+        users: [User!]!
+    }
+
+    type UsersErrorResult {
+        message: String!
+    }
+
+    union UsersResult = UsersSuccessfulResult | UsersErrorResult
 `;
 
 module.exports = { typeDefs };
+
+
+
+
+
+
+
+// query Union{ 
+//     users{
+//       ...on UsersSuccessfulResult{
+//         users {
+//           id
+//           name
+//           age
+//         }
+//       }
+  
+//       ...on UsersErrorResult{
+//         message
+//       }
+//     }
+// }

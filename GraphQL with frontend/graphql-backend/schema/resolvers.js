@@ -3,10 +3,12 @@ const _ = require('lodash');
 const resolvers = {
     Query: {
         users: () => {
-            return UserList;
+            if (UserList) return { users: UserList };
+
+            return { message: "There was an error occured!!" };
         },
 
-        user: (parent, args) => {
+        user: (parent, args, context, info) => {
             const id = args.id;
             return _.find(UserList, { id: Number(id) });
         },
@@ -52,6 +54,15 @@ const resolvers = {
         deleteUser: (parent, args) => {
             const id = Number(args.id);
             _.remove(UserList, (user) => user.id === id);
+            return null;
+        }
+    },
+    UsersResult: {
+        __resolveType(obj) {
+            if (obj.users) return "UsersSuccessfulResult";
+
+            if (obj.message) return "UsersErrorResult";
+
             return null;
         }
     }

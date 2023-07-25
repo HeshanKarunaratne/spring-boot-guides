@@ -3,6 +3,7 @@ package com.example.springbootfeatures.service;
 import com.example.springbootfeatures.dto.Customer;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.annotation.Observed;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,17 +23,20 @@ public class CustomerService {
         this.registry = registry;
     }
 
+    @Observed(name = "add.customer")
     public Customer addCustomer(Customer customer) {
         customerList.add(customer);
         return Observation.createNotStarted("addCustomer", registry)
                 .observe(() -> customer);
     }
 
+    @Observed(name = "get.customers")
     public List<Customer> getCustomers() {
         return Observation.createNotStarted("getCustomers", registry)
                 .observe(() -> customerList);
     }
 
+    @Observed(name = "get.customer")
     public Customer getCustomer(int id) {
         return Observation.createNotStarted("getCustomer", registry)
                 .observe(() -> customerList
